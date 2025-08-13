@@ -6,29 +6,19 @@ use App\Http\Controllers\Api\PassengerController;
 use App\Http\Controllers\Api\FlightController;
 
 
-Route::get('/flights/{flight}/passengers', [FlightController::class, 'passengers']);
-Route::get('/flights', [FlightController::class, 'index']);
-Route::get('/passengers', [PassengerController::class, 'index']);
+// Flights
+Route::get('/flights', [FlightController::class, 'index']);              // (with filters/sort/pagination)
+Route::get('/flights/{flight}', [FlightController::class, 'show']);      // show one flight
+Route::get('/flights/{flight}/passengers', [FlightController::class, 'passengers']); // passengers of a flight
 
+// Passengers CRUD (creates: index, store, show, update, destroy)
+Route::apiResource('passengers', PassengerController::class);
+// Route::post('/passengers', [PassengerController::class, 'store']);
 
-
-Route::get('/passengers', [PassengerController::class, 'index']);
+// Extra passenger action (soft delete)
 Route::post('/passengers/{passenger}/soft-delete', [PassengerController::class, 'softDelete']);
-Route::get('/flights', [FlightController::class, 'index']);
-Route::get('/flights/{flight}', [FlightController::class, 'show']);
 
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
+// Auth (leave as-is)
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

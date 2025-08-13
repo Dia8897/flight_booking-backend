@@ -42,4 +42,42 @@ class PassengerController extends Controller
             'data' => $passenger
         ], 200);
     }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email|unique:passengers,email',
+            'password'   => 'required|string',
+        ]);
+
+        $passenger = Passenger::create($validated);
+
+        $validated['password'] = bcrypt($validated['password']);
+        $passenger = Passenger::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Passenger created successfully',
+            'data'    => $passenger
+        ], 201);
+    }
+
+    public function update(Request $request, Passenger $passenger)
+    {
+        $validated = $request->validate([
+            'first_name' => 'sometimes|string|max:255',
+            'last_name'  => 'sometimes|string|max:255',
+            'email'      => 'sometimes|email|unique:passengers,email,' . $passenger->id,
+        ]);
+
+        $passenger->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Passenger updated successfully',
+            'data'    => $passenger
+        ], 200);
+    }
 }
