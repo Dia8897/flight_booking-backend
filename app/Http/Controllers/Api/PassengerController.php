@@ -32,17 +32,6 @@ class PassengerController extends Controller
         return response()->json(['success' => true, 'data' => $passengers], 200);
     }
 
-
-    public function softDelete(Passenger $passenger)
-    {
-        $passenger->delete();
-        return response()->json([
-            'success' => true,
-            'message' => 'Passenger soft deleted',
-            'data' => $passenger
-        ], 200);
-    }
-
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -52,9 +41,8 @@ class PassengerController extends Controller
             'password'   => 'required|string',
         ]);
 
-        $passenger = Passenger::create($validated);
-
         $validated['password'] = bcrypt($validated['password']);
+
         $passenger = Passenger::create($validated);
 
         return response()->json([
@@ -70,7 +58,12 @@ class PassengerController extends Controller
             'first_name' => 'sometimes|string|max:255',
             'last_name'  => 'sometimes|string|max:255',
             'email'      => 'sometimes|email|unique:passengers,email,' . $passenger->id,
+            'password'   => 'sometimes|string',
         ]);
+
+        if (isset($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        }
 
         $passenger->update($validated);
 
@@ -78,6 +71,28 @@ class PassengerController extends Controller
             'success' => true,
             'message' => 'Passenger updated successfully',
             'data'    => $passenger
+        ], 200);
+    }
+
+    public function softDelete(Passenger $passenger)
+    {
+        $passenger->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Passenger soft deleted',
+            'data'    => $passenger
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+        $passenger = Passenger::withTrashed()->findOrFail($id);
+        $passenger->forceDelete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Passenger permanently deleted'
         ], 200);
     }
 }
