@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PassengerController;
 use App\Http\Controllers\Api\FlightController;
+use App\Http\Controllers\AuthController;
 
 
 // Flights
@@ -21,4 +22,14 @@ Route::post('/passengers/{passenger}/soft-delete', [PassengerController::class, 
 // Auth (leave as-is)
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/flights', [FlightController::class, 'store']);
+    Route::put('/flights/{flight}', [FlightController::class, 'update']);
+    Route::delete('/flights/{flight}', [FlightController::class, 'destroy']);
 });
