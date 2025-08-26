@@ -12,14 +12,15 @@ Route::get('/flights', [FlightController::class, 'index']);              // (wit
 Route::get('/flights/{flight}', [FlightController::class, 'show']);      // show one flight
 Route::get('/flights/{flight}/passengers', [FlightController::class, 'passengers']); // passengers of a flight
 
-// Passengers CRUD (creates: index, store, show, update, destroy)
-Route::apiResource('passengers', PassengerController::class);
-// Route::post('/passengers', [PassengerController::class, 'store']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Passengers CRUD
+    Route::apiResource('passengers', PassengerController::class);
 
-// Extra passenger action (soft delete)
-Route::post('/passengers/{passenger}/soft-delete', [PassengerController::class, 'softDelete']);
+    // Extra passenger action (soft delete)
+    Route::post('/passengers/{passenger}/soft-delete', [PassengerController::class, 'softDelete']);
+});
 
-// Auth (leave as-is)
+// Auth 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -28,6 +29,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/flights', [FlightController::class, 'store']);
     Route::put('/flights/{flight}', [FlightController::class, 'update']);
