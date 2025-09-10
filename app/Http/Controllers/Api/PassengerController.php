@@ -5,45 +5,47 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Passenger;
 use Illuminate\Http\Request;
+use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\AllowedFilter;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Cache;
+
 
 class PassengerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Passenger::query();
-
-        if ($request->has('first_name')) {
-            $query->where('first_name', 'like', '%' . $request->first_name . '%');
-        }
-        if ($request->has('last_name')) {
-            $query->where('last_name', 'like', '%' . $request->last_name . '%');
-        }
-        if ($request->has('email')) {
-            $query->where('email', $request->email);
-        }
-
-        $sortBy = $request->get('sort_by', 'id');
-        $order = $request->get('order', 'asc');
-        $query->orderBy($sortBy, $order);
-
-        $perPage = $request->get('per_page', 10);
-        $passengers = $query->paginate($perPage);
-
-        return response()->json(['success' => true, 'data' => $passengers], 200);
+        $passengers = Cache::remember('passengers.all', 60, function () use ($request) {
+            return QueryBuilder::for(Passenger::class)
+                ->allowedFilters([
+                    AllowedFilter::partial('first_name'),
+                    AllowedFilter::partial('last_name'),
+                    AllowedFilter::exact('email'),
+                    AllowedFilter::exact('flight_id'), // already added
+                ])
+                ->allowedSorts(['id', 'first_name', 'last_name', 'email'])
+                ->paginate($request->get('per_page', 10))
+                ->appends($request->query());
+        });
     }
+
+
 
     public function store(Request $request)
     {
+
+
         $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name'  => 'required|string|max:255',
-            'email'      => 'required|email|unique:passengers,email',
-            'password'   => 'required|string',
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name'  => ['required', 'string', 'max:255'],
+            'email'      => ['required', 'email', 'unique:passengers,email'],
+            'password'   => ['required', 'string'],
         ]);
 
         $validated['password'] = bcrypt($validated['password']);
 
         $passenger = Passenger::create($validated);
+        Cache::forget('passengers.all');
 
         return response()->json([
             'success' => true,
@@ -55,17 +57,20 @@ class PassengerController extends Controller
     public function update(Request $request, Passenger $passenger)
     {
         $validated = $request->validate([
-            'first_name' => 'sometimes|string|max:255',
-            'last_name'  => 'sometimes|string|max:255',
-            'email'      => 'sometimes|email|unique:passengers,email,' . $passenger->id,
-            'password'   => 'sometimes|string',
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name'  => ['required', 'string', 'max:255'],
+            'email'      => ['required', 'email', Rule::unique('passengers')->ignore($passenger->id)],
+            'password'   => ['nullable', 'string'],
         ]);
 
-        if (isset($validated['password'])) {
+        if (!empty($validated['password'])) {
             $validated['password'] = bcrypt($validated['password']);
         }
 
+
+
         $passenger->update($validated);
+        Cache::forget('passengers.all');
 
         return response()->json([
             'success' => true,
@@ -74,25 +79,26 @@ class PassengerController extends Controller
         ], 200);
     }
 
-    public function softDelete(Passenger $passenger)
+    // public function softDelete(Passenger $passenger)
+    // {
+    //     $passenger->delete();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Passenger soft deleted',
+    //         'data'    => $passenger
+    //     ], 200);
+    // }
+
+    public function destroy(Passenger $passenger)
     {
         $passenger->delete();
+        Cache::forget('passengers.all');
 
         return response()->json([
             'success' => true,
-            'message' => 'Passenger soft deleted',
+            'message' => 'Passenger deleted successfully',
             'data'    => $passenger
-        ], 200);
-    }
-
-    public function destroy($id)
-    {
-        $passenger = Passenger::withTrashed()->findOrFail($id);
-        $passenger->forceDelete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Passenger permanently deleted'
         ], 200);
     }
 }

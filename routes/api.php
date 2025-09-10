@@ -13,7 +13,7 @@ Route::get('/flights', [FlightController::class, 'index']);              // (wit
 Route::get('/flights/{flight}', [FlightController::class, 'show']);      // show one flight
 Route::get('/flights/{flight}/passengers', [FlightController::class, 'passengers']); // passengers of a flight
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Passengers CRUD
     Route::apiResource('passengers', PassengerController::class);
 
