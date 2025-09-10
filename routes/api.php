@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PassengerController;
 use App\Http\Controllers\Api\FlightController;
 use App\Http\Controllers\AuthController;
+use App\Models\User;
 
 
 // Flights
@@ -34,4 +35,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/flights', [FlightController::class, 'store']);
     Route::put('/flights/{flight}', [FlightController::class, 'update']);
     Route::delete('/flights/{flight}', [FlightController::class, 'destroy']);
+});
+
+Route::middleware('auth:sanctum')->get('/users/{id}/roles', function ($id) {
+    $user = User::findOrFail($id);
+    return response()->json([
+        'user' => $user->name,
+        'roles' => $user->getRoleNames(), // comes from Spatie HasRoles
+    ]);
 });
