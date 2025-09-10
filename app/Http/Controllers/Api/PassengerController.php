@@ -21,13 +21,19 @@ class PassengerController extends Controller
                     AllowedFilter::partial('first_name'),
                     AllowedFilter::partial('last_name'),
                     AllowedFilter::exact('email'),
-                    AllowedFilter::exact('flight_id'), // already added
+                    AllowedFilter::exact('flight_id'),
                 ])
                 ->allowedSorts(['id', 'first_name', 'last_name', 'email'])
                 ->paginate($request->get('per_page', 10))
                 ->appends($request->query());
         });
+
+        return response([
+            'success' => true,
+            'data' => $passengers
+        ]);
     }
+
 
 
 
